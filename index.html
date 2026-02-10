@@ -3,15 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Cloud BlackBoard - Standard Screen Size</title>
+<title>Cloud BlackBoard Pro - One Screen</title>
 <style>
   :root {
     --bg-dark: #1a1a1a;
     --board-green: #1b3022; 
     --chalk-dust: rgba(255, 255, 255, 0.05);
-    /* กำหนดขนาดบอร์ดมาตรฐาน */
-    --board-w: 1920px;
-    --board-h: 1080px;
   }
 
   body, html { 
@@ -22,64 +19,74 @@
     touch-action: none;
   }
   
-  #container { display: flex; width: 100vw; height: 100vh; padding: 10px; gap: 10px; box-sizing: border-box; }
+  #container { 
+    display: flex; 
+    width: 100vw; 
+    height: 100vh; 
+    padding: 15px; 
+    gap: 15px; 
+    box-sizing: border-box; 
+  }
   
-  /* กรอบไม้Viewport */
-  #viewport {
-    flex: 4.5;
+  /* ตัวบอร์ดแบบ One-Screen (ไม่เลื่อน) */
+  #board-area {
+    flex: 4; /* พื้นที่บอร์ด 80% */
     position: relative;
     border: 10px solid #4e342e; 
     border-radius: 12px;
-    background-color: #000; /* พื้นหลังข้างนอกบอร์ด */
-    overflow: hidden;
-    box-shadow: 0 10px 30px rgba(0,0,0,0.5);
-    cursor: grab;
-  }
-
-  /* ตัวบอร์ดจริงขนาด 1920x1080 */
-  #board { 
-    width: var(--board-w); 
-    height: var(--board-h); 
-    position: absolute; 
     background-color: var(--board-green);
     background-image: radial-gradient(circle, var(--chalk-dust) 1px, transparent 1px);
-    background-size: 50px 50px;
-    box-shadow: inset 0 0 100px rgba(0,0,0,0.5);
-    will-change: transform;
+    background-size: 30px 30px;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+    overflow: hidden; /* ล็อคไม่ให้เลื่อนออกนอกจอ */
   }
 
-  #sidebar { flex: 1.2; display: flex; flex-direction: column; gap: 10px; min-width: 240px; z-index: 2000; }
-  #palette { 
-    background: #2a2a2a; border: 1px solid #444; border-radius: 12px; 
-    display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; 
-    padding: 12px; overflow-y: auto; flex-grow: 1; 
+  /* Sidebar ปรับขนาดให้พอดี */
+  #sidebar { 
+    flex: 1; /* พื้นที่แถบเครื่องมือ 20% */
+    display: flex; 
+    flex-direction: column; 
+    gap: 10px; 
+    min-width: 200px; 
+    max-width: 280px;
+    z-index: 2000; 
   }
   
+  #palette { 
+    background: #2a2a2a; border: 1px solid #444; border-radius: 12px; 
+    display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; 
+    padding: 12px; overflow-y: auto; flex-grow: 1; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  }
+  
+  /* ปรับขนาดโน้ตให้เล็กลงเพื่อให้พอดีกับ One-Screen */
   .postit { 
     border-radius: 2px; box-sizing: border-box; font-weight: 600; cursor: grab; 
-    position: absolute; min-width: 160px; min-height: 160px; 
-    padding: 25px 12px 40px; box-shadow: 10px 10px 25px rgba(0,0,0,0.5); 
+    position: absolute; width: 140px; min-height: 140px; 
+    padding: 22px 10px 35px; box-shadow: 5px 5px 15px rgba(0,0,0,0.4); 
     touch-action: none;
   }
   
   .content { 
-    outline: none; white-space: pre-wrap; font-size: 16px; min-height: 90px; 
-    line-height: 1.5; color: inherit; user-select: text; -webkit-user-select: text;
+    outline: none; white-space: pre-wrap; font-size: 14px; min-height: 80px; 
+    line-height: 1.4; color: inherit; user-select: text; -webkit-user-select: text;
   }
   
   .meta-info { 
-    position: absolute; bottom: 8px; left: 10px; font-size: 10px; 
+    position: absolute; bottom: 6px; left: 8px; font-size: 9px; 
     opacity: 0.85; pointer-events: none; display: flex; align-items: center; gap: 4px;
   }
   
   .delete-btn { 
-    position: absolute; top: 6px; right: 6px; border: none; 
-    background: rgba(0,0,0,0.1); border-radius: 50%; width: 24px; height: 24px; 
+    position: absolute; top: 4px; right: 4px; border: none; 
+    background: rgba(0,0,0,0.1); border-radius: 50%; width: 22px; height: 22px; 
     cursor: pointer; color: inherit; display: flex; align-items: center; justify-content: center;
   }
 
-  .palette-item { aspect-ratio: 1/1; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
-  .btn-clear { padding: 12px; background: #c1121f; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+  .palette-item { aspect-ratio: 1/1; border-radius: 6px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); transition: 0.2s; }
+  .palette-item:hover { transform: scale(1.05); }
+  
+  .btn-clear { padding: 12px; background: #c1121f; color: white; border: none; border-radius: 10px; cursor: pointer; font-weight: bold; }
 
   /* Colors (Standard) */
   .yellow { background: #fff475; color: #333; } .pink { background: #ff9aa2; color: #333; }
@@ -97,18 +104,16 @@
 
   @media (max-width: 768px) {
     #container { flex-direction: column-reverse; padding: 5px; }
-    #sidebar { flex: 0.25; min-width: 100%; flex-direction: row; }
-    #palette { grid-template-columns: repeat(8, 1fr); height: 60px; padding: 5px; }
-    .btn-clear { padding: 5px; font-size: 11px; width: 70px; }
+    #sidebar { min-width: 100%; flex-direction: row; height: 100px; }
+    #palette { grid-template-columns: repeat(8, 1fr); height: 70px; padding: 5px; }
+    .btn-clear { padding: 10px; font-size: 11px; width: 80px; }
   }
 </style>
 </head>
 <body>
 
 <div id="container">
-  <div id="viewport">
-    <div id="board"></div>
-  </div>
+  <div id="board-area"></div>
 
   <div id="sidebar">
     <div id="palette"></div>
@@ -134,119 +139,56 @@
   const db = getDatabase(app);
   const postitsRef = ref(db, 'postits');
 
-  const boardEl = document.getElementById('board');
-  const viewportEl = document.getElementById('viewport');
+  const boardArea = document.getElementById('board-area');
 
-  // ขนาดบอร์ด (ปรับแก้ที่นี่ได้หากต้องการขนาดอื่น)
-  const B_WIDTH = 1920;
-  const B_HEIGHT = 1080;
+  // --- ระบบจัดการโน้ต (Drag & Drop) ---
+  let activeId = null, offsetX = 0, offsetY = 0, isMoved = false;
 
-  let boardState = { x: 0, y: 0, isPanning: false, startX: 0, startY: 0 };
-
-  // --- ระบบเลื่อนบอร์ดพร้อม Constraint ---
-  function applyBoardTransform() {
-    // คำนวณขีดจำกัด (ไม่ให้ขอบบอร์ดหลุดเข้ามาใน Viewport)
-    const minX = viewportEl.offsetWidth - B_WIDTH;
-    const minY = viewportEl.offsetHeight - B_HEIGHT;
-
-    // ถ้าบอร์ดใหญ่กว่า Viewport ให้ล็อคขอบ
-    if (viewportEl.offsetWidth < B_WIDTH) {
-        boardState.x = Math.max(minX, Math.min(0, boardState.x));
-    } else {
-        boardState.x = (viewportEl.offsetWidth - B_WIDTH) / 2; // กึ่งกลางถ้าจอใหญ่กว่าบอร์ด
-    }
-
-    if (viewportEl.offsetHeight < B_HEIGHT) {
-        boardState.y = Math.max(minY, Math.min(0, boardState.y));
-    } else {
-        boardState.y = (viewportEl.offsetHeight - B_HEIGHT) / 2;
-    }
-
-    boardEl.style.transform = `translate(${boardState.x}px, ${boardState.y}px)`;
-  }
-
-  // เริ่มต้นบอร์ดให้อยู่กึ่งกลาง
-  window.addEventListener('load', () => {
-    boardState.x = (viewportEl.offsetWidth - B_WIDTH) / 2;
-    boardState.y = (viewportEl.offsetHeight - B_HEIGHT) / 2;
-    applyBoardTransform();
-  });
-
-  viewportEl.onmousedown = (e) => {
-    if (e.target !== viewportEl && e.target !== boardEl) return;
-    boardState.isPanning = true;
-    boardState.startX = e.clientX - boardState.x;
-    boardState.startY = e.clientY - boardState.y;
-  };
-
-  viewportEl.ontouchstart = (e) => {
-    if (e.target !== viewportEl && e.target !== boardEl) return;
-    boardState.isPanning = true;
-    boardState.startX = e.touches[0].clientX - boardState.x;
-    boardState.startY = e.touches[0].clientY - boardState.y;
-  };
-
-  window.onmousemove = (e) => {
-    if (!boardState.isPanning) return;
-    boardState.x = e.clientX - boardState.startX;
-    boardState.y = e.clientY - boardState.startY;
-    applyBoardTransform();
-  };
-
-  window.ontouchmove = (e) => {
-    if (!boardState.isPanning) return;
-    if (e.cancelable) e.preventDefault();
-    boardState.x = e.touches[0].clientX - boardState.startX;
-    boardState.y = e.touches[0].clientY - boardState.startY;
-    applyBoardTransform();
-  };
-
-  window.onmouseup = window.ontouchend = () => { boardState.isPanning = false; };
-
-  // --- ระบบจัดการโน้ต ---
-  let activeId = null, noteOffsetX = 0, noteOffsetY = 0, isNoteMoved = false;
-
-  function handleNoteStart(e, id) {
+  function handleStart(e, id) {
     if (e.target.closest('.content') || e.target.closest('.delete-btn')) return;
     if (e.cancelable) e.preventDefault();
-    e.stopPropagation();
 
     activeId = id;
-    isNoteMoved = false;
+    isMoved = false;
     const el = document.getElementById(id);
     const rect = el.getBoundingClientRect();
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
     
-    noteOffsetX = clientX - rect.left;
-    noteOffsetY = clientY - rect.top;
+    offsetX = clientX - rect.left;
+    offsetY = clientY - rect.top;
     el.style.zIndex = 10000;
 
-    window.addEventListener('mousemove', handleNoteMove, { passive: false });
-    window.addEventListener('touchmove', handleNoteMove, { passive: false });
-    window.addEventListener('mouseup', handleNoteEnd);
-    window.addEventListener('touchend', handleNoteEnd);
+    window.addEventListener('mousemove', handleMove, { passive: false });
+    window.addEventListener('touchmove', handleMove, { passive: false });
+    window.addEventListener('mouseup', handleEnd);
+    window.addEventListener('touchend', handleEnd);
   }
 
-  function handleNoteMove(e) {
+  function handleMove(e) {
     if (!activeId) return;
-    isNoteMoved = true;
+    isMoved = true;
     if (e.cancelable) e.preventDefault();
 
     const clientX = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
     const clientY = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
     
-    const newX = clientX - boardState.x - viewportEl.offsetLeft - noteOffsetX;
-    const newY = clientY - boardState.y - viewportEl.offsetTop - noteOffsetY;
+    const areaRect = boardArea.getBoundingClientRect();
+
+    let newX = clientX - areaRect.left - offsetX;
+    let newY = clientY - areaRect.top - offsetY;
+
+    // ล็อคขอบไม่ให้โน้ตหลุดออกจากบอร์ดเขียวที่เห็นตรงหน้า
+    newX = Math.max(0, Math.min(newX, areaRect.width - 140));
+    newY = Math.max(0, Math.min(newY, areaRect.height - 140));
 
     const el = document.getElementById(activeId);
-    // ล็อคโน้ตไม่ให้หลุดขอบบอร์ดเขียว
-    el.style.left = Math.max(0, Math.min(B_WIDTH - 160, newX)) + 'px';
-    el.style.top = Math.max(0, Math.min(B_HEIGHT - 160, newY)) + 'px';
+    el.style.left = newX + 'px';
+    el.style.top = newY + 'px';
   }
 
-  function handleNoteEnd() {
-    if (activeId && isNoteMoved) {
+  function handleEnd() {
+    if (activeId && isMoved) {
       const el = document.getElementById(activeId);
       update(ref(db, 'postits/' + activeId), {
         x: parseInt(el.style.left), 
@@ -256,21 +198,21 @@
       });
     }
     activeId = null;
-    window.removeEventListener('mousemove', handleNoteMove);
+    window.removeEventListener('mousemove', handleMove);
     window.removeEventListener('touchmove', handleNoteMove);
   }
 
-  // --- Firebase Logic ---
+  // --- Firebase & UI ---
   const COLOR_LIST = ['yellow', 'pink', 'green', 'blue', 'orange', 'lavender', 'mint', 'rose', 'clay', 'dark', 'teal', 'cream', 'coral', 'lime', 'sky', 'coffee', 'gold', 'plum', 'smoke', 'forest', 'brick', 'mustard', 'indigo', 'peach'];
 
   COLOR_LIST.forEach(color => {
     const d = document.createElement('div');
     d.className = `palette-item ${color}`;
     d.onclick = () => {
-      // วางโน้ตตรงกึ่งกลางจอ
-      const centerX = (viewportEl.offsetWidth / 2) - boardState.x - 80;
-      const centerY = (viewportEl.offsetHeight / 2) - boardState.y - 80;
-      push(postitsRef, { color, text: "", x: centerX, y: centerY, updatedAt: serverTimestamp(), action: "🆕" });
+      push(postitsRef, { 
+        color, text: "", x: 20, y: 20, 
+        updatedAt: serverTimestamp(), action: "🆕" 
+      });
     };
     document.getElementById('palette').appendChild(d);
   });
@@ -287,11 +229,11 @@
       if (!p) {
         p = document.createElement('div'); p.id = id;
         p.innerHTML = `<div class="content" contenteditable="true" spellcheck="false"></div><div class="meta-info"><span class="status-tag"></span><span class="dt"></span></div><button class="delete-btn">✕</button>`;
-        p.querySelector('.delete-btn').onclick = () => { if(confirm("ลบ?")) remove(ref(db, 'postits/' + id)); };
+        p.querySelector('.delete-btn').onclick = () => { if(confirm("ลบโน้ต?")) remove(ref(db, 'postits/' + id)); };
         p.querySelector('.content').onblur = (e) => update(ref(db, 'postits/' + id), { text: e.target.innerText, updatedAt: serverTimestamp(), action: "✏️" });
-        p.addEventListener('mousedown', (e) => handleNoteStart(e, id));
-        p.addEventListener('touchstart', (e) => handleNoteStart(e, id), { passive: false });
-        boardEl.appendChild(p);
+        p.addEventListener('mousedown', (e) => handleStart(e, id));
+        p.addEventListener('touchstart', (e) => handleStart(e, id), { passive: false });
+        boardArea.appendChild(p);
       }
       p.className = `postit ${data.color}`;
       if (activeId !== id) { p.style.left = data.x + 'px'; p.style.top = data.y + 'px'; p.style.zIndex = baseZ; }
