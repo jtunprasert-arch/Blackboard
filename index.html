@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Cloud BlackBoard Pro - Fix Colors</title>
+<title>Cloud BlackBoard Pro - Mobile Touch Fix</title>
 <style>
   :root {
     --bg-dark: #1a1a1a;
@@ -16,7 +16,6 @@
   body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', sans-serif; background-color: var(--bg-dark); overflow: hidden; touch-action: none; }
   #container { display: flex; width: 100vw; height: 100vh; padding: 10px; gap: 10px; box-sizing: border-box; }
   
-  /* Viewport & Board */
   #viewport { flex: 4.5; position: relative; border: 8px solid #4e342e; border-radius: 12px; background-color: #000; overflow: hidden; }
   #board { 
     width: var(--b-w); height: var(--b-h); position: absolute; 
@@ -27,7 +26,6 @@
     will-change: transform;
   }
 
-  /* Sidebar Optimization */
   #sidebar { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 240px; max-width: 300px; z-index: 2000; }
   #palette { 
     background: #2a2a2a; border: 1px solid #444; border-radius: 10px; 
@@ -35,7 +33,6 @@
     padding: 10px; overflow-y: auto; flex-grow: 1; touch-action: pan-y;
   }
   
-  /* Mini-map */
   #minimap {
     position: absolute; bottom: 15px; right: 15px; width: 150px; height: 112px;
     background: rgba(0,0,0,0.7); border: 2px solid rgba(255,255,255,0.2);
@@ -43,18 +40,14 @@
   }
   .map-dot { position: absolute; width: 5px; height: 5px; border-radius: 1px; transform: translate(-50%, -50%); }
 
-  /* Note Styles */
-  .postit { border-radius: 2px; position: absolute; width: 140px; min-height: 140px; padding: 22px 10px 35px; box-shadow: 8px 8px 15px rgba(0,0,0,0.4); touch-action: none; cursor: grab; }
+  .postit { border-radius: 2px; position: absolute; width: 140px; min-height: 140px; padding: 25px 10px 40px; box-shadow: 8px 8px 15px rgba(0,0,0,0.4); touch-action: none; cursor: grab; }
   .content { outline: none; white-space: pre-wrap; font-size: 14px; min-height: 85px; color: inherit; }
-  .delete-btn { position: absolute; top: 4px; right: 4px; border: none; background: rgba(0,0,0,0.1); border-radius: 50%; width: 22px; height: 22px; cursor: pointer; color: inherit; display: flex; align-items: center; justify-content: center; font-weight: bold; }
+  .meta-info { position: absolute; bottom: 8px; left: 10px; font-size: 10px; opacity: 0.85; pointer-events: none; font-weight: bold; }
+  .delete-btn { position: absolute; top: 5px; right: 5px; border: none; background: rgba(0,0,0,0.1); border-radius: 50%; width: 22px; height: 22px; cursor: pointer; color: inherit; display: flex; align-items: center; justify-content: center; font-weight: bold; }
   
-  /* Palette Item */
   .palette-item { aspect-ratio: 1/1; border-radius: 5px; border: 1px solid rgba(255,255,255,0.1); cursor: pointer; transition: transform 0.1s; }
-  .palette-item:hover { transform: scale(1.1); z-index: 10; }
-  
-  /* Buttons */
   .btn-group { display: flex; flex-direction: column; gap: 6px; }
-  .btn-ui { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; color: white; display: flex; align-items: center; justify-content: center; gap: 5px; }
+  .btn-ui { padding: 12px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; color: white; display: flex; align-items: center; justify-content: center; }
   .btn-org { background: #f39c12; }
   .btn-clear { background: #c1121f; }
 
@@ -67,7 +60,7 @@
     #minimap { width: 100px; height: 75px; bottom: 125px; right: 10px; }
   }
 
-  /* Colors - ครบทั้ง 24 สี */
+  /* Colors */
   .yellow { background: #fff475; color: #333; } .pink { background: #ff9aa2; color: #333; }
   .green { background: #b5e7a0; color: #333; } .blue { background: #a0c4ff; color: #333; }
   .orange { background: #ffb347; color: #333; } .lavender { background: #e1ceff; color: #333; }
@@ -124,7 +117,6 @@
   let isMobile = window.innerWidth <= 768;
   let pan = { x: 0, y: 0, isPanning: false, startX: 0, startY: 0 };
 
-  // --- ระบบปรับเลเอาต์และ Panning ---
   function applyPan() {
     if (isMobile) {
       const minX = viewport.offsetWidth - 2000;
@@ -135,20 +127,36 @@
     board.style.transform = `translate(${pan.x}px, ${pan.y}px)`;
   }
 
+  function formatFullDateTime(ts) {
+    if (!ts) return "";
+    const d = new Date(ts);
+    return `${d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit'})} | ${d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`;
+  }
+
   window.addEventListener('resize', () => { isMobile = window.innerWidth <= 768; applyPan(); });
 
-  viewport.onmousedown = (e) => { if (!isMobile || (e.target !== viewport && e.target !== board)) return; pan.isPanning = true; pan.startX = e.clientX - pan.x; pan.startY = e.clientY - pan.y; };
-  viewport.ontouchstart = (e) => { if (!isMobile || (e.target !== viewport && e.target !== board)) return; pan.isPanning = true; pan.startX = e.touches[0].clientX - pan.x; pan.startY = e.touches[0].clientY - pan.y; };
-  window.onmousemove = (e) => { if (!pan.isPanning) return; pan.x = e.clientX - pan.startX; pan.y = e.clientY - pan.startY; applyPan(); };
-  window.ontouchmove = (e) => { if (!pan.isPanning) return; pan.x = e.touches[0].clientX - pan.startX; pan.y = e.touches[0].clientY - pan.startY; applyPan(); };
-  window.onmouseup = window.ontouchend = () => { pan.isPanning = false; };
+  // Pan Board Logic
+  viewport.addEventListener('mousedown', (e) => { if (!isMobile || (e.target !== viewport && e.target !== board)) return; pan.isPanning = true; pan.startX = e.clientX - pan.x; pan.startY = e.clientY - pan.y; });
+  viewport.addEventListener('touchstart', (e) => { 
+    if (!isMobile || (e.target !== viewport && e.target !== board)) return;
+    pan.isPanning = true; 
+    pan.startX = e.touches[0].clientX - pan.x; 
+    pan.startY = e.touches[0].clientY - pan.y;
+    if(e.cancelable) e.preventDefault();
+  }, { passive: false });
 
-  // --- จัดการโน้ต ---
+  window.addEventListener('mousemove', (e) => { if (!pan.isPanning) return; pan.x = e.clientX - pan.startX; pan.y = e.clientY - pan.startY; applyPan(); });
+  window.addEventListener('touchmove', (e) => { if (!pan.isPanning) return; pan.x = e.touches[0].clientX - pan.startX; pan.y = e.touches[0].clientY - pan.startY; applyPan(); if(e.cancelable) e.preventDefault(); }, { passive: false });
+  window.addEventListener('mouseup', () => pan.isPanning = false);
+  window.addEventListener('touchend', () => pan.isPanning = false);
+
+  // Drag Note Logic
   let activeId = null, noteOffX = 0, noteOffY = 0, isMoved = false;
 
   function handleNoteStart(e, id) {
     if (e.target.closest('.content') || e.target.closest('.delete-btn')) return;
-    e.stopPropagation(); activeId = id; isMoved = false;
+    e.stopPropagation(); if(e.cancelable) e.preventDefault();
+    activeId = id; isMoved = false;
     const el = document.getElementById(id);
     const rect = el.getBoundingClientRect();
     const cx = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
@@ -157,25 +165,31 @@
     el.style.zIndex = 10000;
   }
 
-  window.addEventListener('mousemove', (e) => {
+  const moveNote = (e) => {
     if (!activeId) return; isMoved = true;
-    const cx = e.clientX, cy = e.clientY;
+    if(e.cancelable) e.preventDefault();
+    const cx = e.type.includes('touch') ? e.touches[0].clientX : e.clientX;
+    const cy = e.type.includes('touch') ? e.touches[0].clientY : e.clientY;
     const el = document.getElementById(activeId);
     let nx = cx - pan.x - viewport.offsetLeft - noteOffX;
     let ny = cy - pan.y - viewport.offsetTop - noteOffY;
     el.style.left = Math.max(0, Math.min(1860, nx)) + 'px';
     el.style.top = Math.max(0, Math.min(1360, ny)) + 'px';
-  });
+  };
 
-  window.addEventListener('mouseup', () => {
+  const endNote = () => {
     if (activeId && isMoved) {
       const el = document.getElementById(activeId);
       update(ref(db, 'postits/' + activeId), { x: parseInt(el.style.left), y: parseInt(el.style.top), updatedAt: serverTimestamp() });
     }
     activeId = null;
-  });
+  };
 
-  // --- จัดระเบียบโน้ต ---
+  window.addEventListener('mousemove', moveNote);
+  window.addEventListener('touchmove', moveNote, { passive: false });
+  window.addEventListener('mouseup', endNote);
+  window.addEventListener('touchend', endNote);
+
   window.organizeNotes = () => {
     if(confirm("ดึงโน้ตทุกใบกลับมาเรียงใหม่?")) {
       onValue(postitsRef, (snap) => {
@@ -189,7 +203,6 @@
     }
   };
 
-  // --- สร้าง Palette สีครบ 24 สี ---
   const COLORS = ['yellow', 'pink', 'green', 'blue', 'orange', 'lavender', 'mint', 'rose', 'clay', 'dark', 'teal', 'cream', 'coral', 'lime', 'sky', 'coffee', 'gold', 'plum', 'smoke', 'forest', 'brick', 'mustard', 'indigo', 'peach'];
   COLORS.forEach(c => {
     const d = document.createElement('div'); d.className = `palette-item ${c}`;
@@ -197,7 +210,6 @@
     document.getElementById('palette').appendChild(d);
   });
 
-  // --- Firebase Sync ---
   onValue(query(postitsRef, orderByChild('updatedAt')), (snap) => {
     const ids = []; minimap.innerHTML = "";
     snap.forEach((child) => {
@@ -205,7 +217,7 @@
       let p = document.getElementById(id);
       if (!p) {
         p = document.createElement('div'); p.id = id;
-        p.innerHTML = `<div class="content" contenteditable="true" spellcheck="false"></div><button class="delete-btn">✕</button>`;
+        p.innerHTML = `<div class="content" contenteditable="true" spellcheck="false"></div><div class="meta-info"></div><button class="delete-btn">✕</button>`;
         p.querySelector('.delete-btn').onclick = () => remove(ref(db, 'postits/' + id));
         p.querySelector('.content').onblur = (e) => update(ref(db, 'postits/' + id), { text: e.target.innerText, updatedAt: serverTimestamp() });
         p.addEventListener('mousedown', (e) => handleNoteStart(e, id));
@@ -216,6 +228,7 @@
       if (activeId !== id) { p.style.left = data.x + 'px'; p.style.top = data.y + 'px'; }
       const content = p.querySelector('.content');
       if (document.activeElement !== content) content.innerText = data.text || "";
+      p.querySelector('.meta-info').innerText = formatFullDateTime(data.updatedAt);
       
       const dot = document.createElement('div');
       dot.className = `map-dot ${data.color}`;
