@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
-<title>Cloud BlackBoard Pro - Ultimate Sync</title>
+<title>Cloud BlackBoard Pro - Instant Save</title>
 <style>
   :root {
     --bg-dark: #1a1a1a;
@@ -16,7 +16,6 @@
   body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg-dark); overflow: hidden; touch-action: none; }
   #container { display: flex; width: 100vw; height: 100vh; padding: 10px; gap: 10px; box-sizing: border-box; }
   
-  /* Viewport & Board */
   #viewport { flex: 4.5; position: relative; border: 8px solid #4e342e; border-radius: 12px; background-color: #000; overflow: hidden; }
   #board { 
     width: var(--b-w); height: var(--b-h); position: absolute; 
@@ -27,7 +26,6 @@
     will-change: transform;
   }
 
-  /* Sidebar */
   #sidebar { flex: 1; display: flex; flex-direction: column; gap: 8px; min-width: 240px; max-width: 300px; z-index: 2000; }
   #palette { 
     background: #2a2a2a; border: 1px solid #444; border-radius: 10px; 
@@ -35,7 +33,6 @@
     padding: 10px; overflow-y: auto; flex-grow: 1; touch-action: pan-y;
   }
   
-  /* Mini-map */
   #minimap {
     position: absolute; bottom: 15px; right: 15px; width: 150px; height: 112px;
     background: rgba(0,0,0,0.7); border: 2px solid rgba(255,255,255,0.2);
@@ -43,7 +40,6 @@
   }
   .map-dot { position: absolute; width: 5px; height: 5px; border-radius: 1px; transform: translate(-50%, -50%); }
 
-  /* Post-it Note */
   .postit { border-radius: 2px; position: absolute; width: 140px; min-height: 140px; padding: 25px 10px 40px; box-shadow: 8px 8px 15px rgba(0,0,0,0.4); touch-action: none; cursor: grab; }
   .content { outline: none; white-space: pre-wrap; font-size: 14px; min-height: 85px; color: inherit; }
   .meta-info { position: absolute; bottom: 8px; left: 10px; font-size: 10px; opacity: 0.85; pointer-events: none; font-weight: bold; }
@@ -120,13 +116,14 @@
 
   let isMobile = window.innerWidth <= 768;
   let pan = { x: 0, y: 0, isPanning: false, startX: 0, startY: 0 };
+  let editingId = null; // เก็บ ID ของโน้ตที่กำลังพิมพ์อยู่
 
   function applyPan() {
     if (isMobile) {
-      const minX = viewport.offsetWidth - 2000;
-      const minY = viewport.offsetHeight - 1500;
-      pan.x = Math.max(minX, Math.min(0, pan.x));
-      pan.y = Math.max(minY, Math.min(0, pan.y));
+        const minX = viewport.offsetWidth - 2000;
+        const minY = viewport.offsetHeight - 1500;
+        pan.x = Math.max(minX, Math.min(0, pan.x));
+        pan.y = Math.max(minY, Math.min(0, pan.y));
     } else { pan.x = 0; pan.y = 0; }
     board.style.transform = `translate(${pan.x}px, ${pan.y}px)`;
   }
@@ -137,9 +134,24 @@
     return `${d.toLocaleDateString('th-TH',{day:'2-digit',month:'2-digit'})} | ${d.toLocaleTimeString('th-TH',{hour:'2-digit',minute:'2-digit'})}`;
   }
 
+  // --- ระบบตรวจจับการคลิกนอกโน้ตเพื่อบันทึก ---
+  const saveCurrentEditingNote = () => {
+    if (editingId) {
+        const el = document.getElementById(editingId);
+        if (el) {
+            const content = el.querySelector('.content').innerText;
+            update(ref(db, 'postits/' + editingId), { text: content, updatedAt: serverTimestamp() });
+        }
+        editingId = null;
+    }
+  };
+
+  window.addEventListener('mousedown', (e) => { if (!e.target.closest('.postit')) saveCurrentEditingNote(); });
+  window.addEventListener('touchstart', (e) => { if (!e.target.closest('.postit')) saveCurrentEditingNote(); });
+
   window.addEventListener('resize', () => { isMobile = window.innerWidth <= 768; applyPan(); });
 
-  // --- Board Panning (เลื่อนบอร์ด) ---
+  // Panning
   viewport.addEventListener('mousedown', (e) => { if (!isMobile || (e.target !== viewport && e.target !== board)) return; pan.isPanning = true; pan.startX = e.clientX - pan.x; pan.startY = e.clientY - pan.y; });
   viewport.addEventListener('touchstart', (e) => { 
     if (!isMobile || (e.target !== viewport && e.target !== board)) return;
@@ -152,12 +164,18 @@
   window.addEventListener('mouseup', () => pan.isPanning = false);
   window.addEventListener('touchend', () => pan.isPanning = false);
 
-  // --- Note Dragging (ลากโน้ต) ---
+  // Dragging
   let activeId = null, noteOffX = 0, noteOffY = 0, isMoved = false;
 
   function handleNoteStart(e, id) {
-    if (e.target.closest('.content') || e.target.closest('.delete-btn')) return;
+    if (e.target.closest('.content')) { 
+        editingId = id; // เริ่มพิมพ์โน้ตใบนี้
+        return; 
+    }
+    if (e.target.closest('.delete-btn')) return;
+    
     e.stopPropagation(); if(e.cancelable) e.preventDefault();
+    saveCurrentEditingNote(); // บันทึกโน้ตอื่นถ้ามีก่อนเริ่มลากใบใหม่
     activeId = id; isMoved = false;
     const el = document.getElementById(id);
     const rect = el.getBoundingClientRect();
@@ -192,9 +210,8 @@
   window.addEventListener('mouseup', endNote);
   window.addEventListener('touchend', endNote);
 
-  // --- Organize ---
   window.organizeNotes = () => {
-    if(confirm("ดึงโน้ตทุกใบกลับมาเรียงใหม่ที่มุมซ้ายบน?")) {
+    if(confirm("ดึงโน้ตทุกใบกลับมาเรียงใหม่?")) {
       onValue(postitsRef, (snap) => {
         let i = 0;
         snap.forEach((child) => {
@@ -206,75 +223,55 @@
     }
   };
 
-  // --- Palette ---
   const COLORS = ['yellow', 'pink', 'green', 'blue', 'orange', 'lavender', 'mint', 'rose', 'clay', 'dark', 'teal', 'cream', 'coral', 'lime', 'sky', 'coffee', 'gold', 'plum', 'smoke', 'forest', 'brick', 'mustard', 'indigo', 'peach'];
   COLORS.forEach(c => {
     const d = document.createElement('div'); d.className = `palette-item ${c}`;
-    d.onclick = () => push(postitsRef, { color: c, text: "", x: (viewport.offsetWidth/2)-pan.x-70, y: (viewport.offsetHeight/2)-pan.y-70, updatedAt: serverTimestamp() });
+    d.onclick = () => {
+        saveCurrentEditingNote();
+        push(postitsRef, { color: c, text: "", x: (viewport.offsetWidth/2)-pan.x-70, y: (viewport.offsetHeight/2)-pan.y-70, updatedAt: serverTimestamp() });
+    };
     document.getElementById('palette').appendChild(d);
   });
 
-  // --- Real-time Sync & Z-Index Fix ---
   const noteQuery = query(postitsRef, orderByChild('updatedAt'));
 
   onValue(noteQuery, (snap) => {
-    const ids = []; 
-    minimap.innerHTML = "";
-    
-    // 1. นำข้อมูลมาใส่ Array เพื่อ Sort ให้แม่นยำ (แก้ปัญหา Z-index มือถือ)
+    const ids = []; minimap.innerHTML = "";
     const notesArray = [];
-    snap.forEach((child) => {
-        notesArray.push({ id: child.key, ...child.val() });
-    });
-
-    // 2. เรียงลำดับตามเวลา (น้อยไปมาก) โน้ตใหม่ล่าสุดจะอยู่ท้ายอาร์เรย์
+    snap.forEach((child) => { notesArray.push({ id: child.key, ...child.val() }); });
     notesArray.sort((a, b) => (a.updatedAt || 0) - (b.updatedAt || 0));
 
-    // 3. วนลูปสร้าง/อัปเดตโน้ตตามลำดับ Array
     notesArray.forEach((data, index) => {
-        const id = data.id;
-        ids.push(id);
-        
+        const id = data.id; ids.push(id);
         let p = document.getElementById(id);
         if (!p) {
-            p = document.createElement('div'); 
-            p.id = id;
+            p = document.createElement('div'); p.id = id;
             p.innerHTML = `<div class="content" contenteditable="true" spellcheck="false"></div><div class="meta-info"></div><button class="delete-btn">✕</button>`;
             p.querySelector('.delete-btn').onclick = () => remove(ref(db, 'postits/' + id));
-            p.querySelector('.content').onblur = (e) => {
-                update(ref(db, 'postits/' + id), { text: e.target.innerText, updatedAt: serverTimestamp() });
-            };
             p.addEventListener('mousedown', (e) => handleNoteStart(e, id));
             p.addEventListener('touchstart', (e) => handleNoteStart(e, id), { passive: false });
             board.appendChild(p);
         }
-
         p.className = `postit ${data.color}`;
-        
-        // อัปเดตตำแหน่งและ Z-index (Force render สำหรับมือถือ)
         if (activeId !== id) { 
             p.style.left = data.x + 'px'; 
             p.style.top = data.y + 'px'; 
-            p.style.zIndex = 100 + index; // ยิ่ง Index มาก (แก้ไขล่าสุด) zIndex ยิ่งสูง
+            p.style.zIndex = 100 + index; 
         }
-
         const content = p.querySelector('.content');
         if (document.activeElement !== content) content.innerText = data.text || "";
         p.querySelector('.meta-info').innerText = formatFullDateTime(data.updatedAt);
         
-        // Mini-map rendering
         const dot = document.createElement('div');
         dot.className = `map-dot ${data.color}`;
         dot.style.left = (data.x / 2000 * 100) + "%";
         dot.style.top = (data.y / 1500 * 100) + "%";
         minimap.appendChild(dot);
     });
-
-    // ลบโน้ตที่ไม่เหลือใน DB
     document.querySelectorAll('.postit').forEach(el => { if (!ids.includes(el.id)) el.remove(); });
   });
 
-  window.clearAllData = () => { if(confirm("ล้างกระดานดำสำหรับทุกคน?")) remove(postitsRef); };
+  window.clearAllData = () => { if(confirm("ล้างบอร์ดทั้งหมด?")) remove(postitsRef); };
   applyPan();
 </script>
 </body>
