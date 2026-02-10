@@ -2,57 +2,129 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8" />
-<title>Cloud BlackBoard - Real-time Collaboration</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Cloud BlackBoard Pro - Real-time Collaboration</title>
 <style>
-  body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: #1a1a1a; overflow: hidden; }
+  :root {
+    --bg-dark: #1a1a1a;
+    --board-green: #1b3022; /* สีเขียวเข้มแบบกระดานดำโรงเรียน */
+    --chalk-dust: rgba(255, 255, 255, 0.05);
+  }
+
+  body, html { margin: 0; padding: 0; height: 100%; font-family: 'Segoe UI', Tahoma, sans-serif; background-color: var(--bg-dark); overflow: hidden; touch-action: none; }
+  
   #container { display: flex; width: 100vw; height: 100vh; padding: 15px; gap: 15px; box-sizing: border-box; }
   
   /* BlackBoard Area */
-  #board { 
-    flex: 4.5; 
-    background-color: #222; /* เปลี่ยนเป็น #1b3022 หากต้องการสีเขียวเข้มกระดานดำ */
-    background-image: radial-gradient(#333 1px, transparent 1px);
-    background-size: 30px 30px;
-    border: 10px solid #444; 
-    border-radius: 8px; 
-    position: relative; 
-    overflow: hidden; 
-    box-shadow: inset 0 0 50px rgba(0,0,0,0.5);
+  #board-wrapper {
+    flex: 4.5;
+    position: relative;
+    border: 12px solid #4e342e; /* กรอบไม้ */
+    border-radius: 8px;
+    background-color: var(--board-green);
+    background-image: 
+      radial-gradient(circle, var(--chalk-dust) 1px, transparent 1px),
+      linear-gradient(45deg, transparent 48%, rgba(255,255,255,0.02) 50%, transparent 52%);
+    background-size: 40px 40px, 100% 100%;
+    overflow: hidden;
+    box-shadow: inset 0 0 100px rgba(0,0,0,0.8), 0 10px 30px rgba(0,0,0,0.5);
   }
+
+  #board { width: 100%; height: 100%; position: relative; }
 
   /* Sidebar */
   #sidebar { flex: 1; display: flex; flex-direction: column; gap: 15px; min-width: 260px; }
-  #palette { background: #333; border: 1px solid #555; border-radius: 10px; display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; padding: 12px; overflow-y: auto; flex-grow: 1; }
+  #palette { 
+    background: #2a2a2a; 
+    border: 1px solid #444; 
+    border-radius: 12px; 
+    display: grid; 
+    grid-template-columns: repeat(4, 1fr); 
+    gap: 8px; 
+    padding: 15px; 
+    overflow-y: auto; 
+    flex-grow: 1; 
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+  }
   
   /* Post-it */
-  .postit { border-radius: 2px; box-sizing: border-box; font-weight: 600; cursor: grab; position: absolute; min-width: 150px; min-height: 150px; padding: 25px 15px 35px; box-shadow: 5px 5px 15px rgba(0,0,0,0.4); z-index: 10; touch-action: none; }
-  .postit:active { cursor: grabbing; z-index: 1000; transform: scale(1.02); }
+  .postit { 
+    border-radius: 2px; 
+    box-sizing: border-box; 
+    font-weight: 600; 
+    cursor: grab; 
+    position: absolute; 
+    min-width: 160px; 
+    min-height: 160px; 
+    padding: 25px 15px 40px; 
+    box-shadow: 8px 8px 20px rgba(0,0,0,0.4); 
+    transition: transform 0.1s;
+    will-change: transform, left, top;
+  }
+  .postit:active { cursor: grabbing; transform: scale(1.05) rotate(2deg); }
   
-  .content { outline: none; white-space: pre-wrap; font-size: 15px; min-height: 90px; cursor: text; line-height: 1.4; color: #333; }
+  .content { 
+    outline: none; 
+    white-space: pre-wrap; 
+    font-size: 16px; 
+    min-height: 95px; 
+    cursor: text; 
+    line-height: 1.4; 
+    color: #333; 
+  }
   
-  /* Meta Info (Status & Time) */
-  .meta-info { position: absolute; bottom: 6px; left: 8px; font-size: 9px; font-weight: normal; opacity: 0.7; pointer-events: none; }
-  .status-tag { font-weight: bold; margin-right: 4px; }
+  /* Meta Info */
+  .meta-info { position: absolute; bottom: 8px; left: 10px; font-size: 10px; opacity: 0.7; pointer-events: none; }
+  .status-tag { font-weight: bold; margin-right: 4px; border-radius: 3px; background: rgba(0,0,0,0.05); padding: 1px 4px; }
   
-  .delete-btn { position: absolute; top: 4px; right: 4px; border: none; background: rgba(0,0,0,0.1); border-radius: 50%; width: 22px; height: 22px; cursor: pointer; font-size: 12px; color: inherit; display: flex; align-items: center; justify-content: center; }
-  .palette-item { position: static; min-width: auto; min-height: 45px; border-radius: 4px; cursor: pointer; border: 1px solid rgba(255,255,255,0.1); }
-  .btn-clear { padding: 12px; background: #c1121f; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; }
+  .delete-btn { 
+    position: absolute; top: 6px; right: 6px; border: none; 
+    background: rgba(0,0,0,0.08); border-radius: 50%; width: 24px; height: 24px; 
+    cursor: pointer; font-size: 12px; color: inherit; display: flex; 
+    align-items: center; justify-content: center; transition: 0.2s;
+  }
+  .delete-btn:hover { background: rgba(255,0,0,0.2); transform: scale(1.1); }
+
+  .palette-item { 
+    aspect-ratio: 1/1; border-radius: 6px; cursor: pointer; 
+    border: 1px solid rgba(255,255,255,0.1); transition: transform 0.2s; 
+  }
+  .palette-item:hover { transform: scale(1.1); z-index: 5; }
+
+  .btn-clear { 
+    padding: 14px; background: #c1121f; color: white; border: none; 
+    border-radius: 10px; cursor: pointer; font-weight: bold; transition: 0.3s;
+  }
+  .btn-clear:hover { background: #e63946; box-shadow: 0 0 15px rgba(193, 18, 31, 0.4); }
 
   /* Colors */
-  .yellow { background: #fff475; } .pink { background: #ff9aa2; } .green { background: #b5e7a0; }
-  .blue { background: #a0c4ff; } .orange { background: #ffb347; } .lavender { background: #e1ceff; }
-  .mint { background: #c1f0e8; } .rose { background: #ffc8dd; } .clay { background: #cb997e; }
-  .dark { background: #3d405b; color: white; } .teal { background: #81b29a; } .cream { background: #fefae0; }
-  .coral { background: #ff8b94; } .lime { background: #d4fc79; } .sky { background: #caf0f8; }
-  .coffee { background: #6f4e37; color: white; } .gold { background: #ffd700; } .plum { background: #6a0572; color: white; }
-  .smoke { background: #8d99ae; color: white; } .forest { background: #2d6a4f; color: white; }
-  .brick { background: #bc4749; color: white; } .mustard { background: #e9c46a; } .indigo { background: #4cc9f0; } .peach { background: #f4a261; }
+  .yellow { background: #fff475; color: #333; } .pink { background: #ff9aa2; color: #333; }
+  .green { background: #b5e7a0; color: #333; } .blue { background: #a0c4ff; color: #333; }
+  .orange { background: #ffb347; color: #333; } .lavender { background: #e1ceff; color: #333; }
+  .mint { background: #c1f0e8; color: #333; } .rose { background: #ffc8dd; color: #333; }
+  .clay { background: #cb997e; color: #fff; } .dark { background: #3d405b; color: #fff; }
+  .teal { background: #81b29a; color: #fff; } .cream { background: #fefae0; color: #333; }
+  .coral { background: #ff8b94; color: #fff; } .lime { background: #d4fc79; color: #333; }
+  .sky { background: #caf0f8; color: #333; } .coffee { background: #6f4e37; color: #fff; }
+  .gold { background: #ffd700; color: #333; } .plum { background: #6a0572; color: #fff; }
+  .smoke { background: #8d99ae; color: #fff; } .forest { background: #2d6a4f; color: #fff; }
+  .brick { background: #bc4749; color: #fff; } .mustard { background: #e9c46a; color: #333; }
+  .indigo { background: #4cc9f0; color: #333; } .peach { background: #f4a261; color: #fff; }
+
+  @media (max-width: 768px) {
+    #container { flex-direction: column-reverse; }
+    #sidebar { flex: 0.4; min-width: 100%; flex-direction: row; align-items: center; }
+    #palette { grid-template-columns: repeat(8, 1fr); height: 80px; padding: 5px; }
+    .btn-clear { padding: 10px; font-size: 12px; white-space: nowrap; }
+  }
 </style>
 </head>
 <body>
 
 <div id="container">
-  <div id="board" id="blackboard"></div>
+  <div id="board-wrapper">
+    <div id="board"></div>
+  </div>
 
   <div id="sidebar">
     <div id="palette"></div>
@@ -62,9 +134,8 @@
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getDatabase, ref, onValue, push, remove, update, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
+  import { getDatabase, ref, onValue, push, remove, update, serverTimestamp, query, orderByChild } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js";
 
-  // ชุด Config จากภาพ blackboard-568c8 ของคุณ
   const firebaseConfig = {
     apiKey: "AIzaSyBIUG8gWfcx66oUIBZuDEpSPfylakaGjH8",
     authDomain: "blackboard-568c8.firebaseapp.com",
@@ -85,81 +156,135 @@
   function formatTime(ts) {
     if (!ts) return "";
     const d = new Date(ts);
-    return `${d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' })}`;
+    return d.toLocaleTimeString('th-TH', { hour: '2-digit', minute: '2-digit' });
   }
 
   // สร้าง Palette
   COLOR_LIST.forEach(color => {
     const d = document.createElement('div');
     d.className = `palette-item ${color}`;
-    d.onclick = () => push(postitsRef, { 
-      color, text: "", x: 100, y: 100, 
-      updatedAt: serverTimestamp(), action: "🆕 สร้าง" 
-    });
+    d.onclick = () => {
+      push(postitsRef, { 
+        color, text: "", x: 50, y: 50, 
+        updatedAt: serverTimestamp(), action: "🆕 สร้าง" 
+      });
+    };
     document.getElementById('palette').appendChild(d);
   });
 
-  let activeId = null, startX, startY, initialX, initialY, isMoved = false;
+  let activeId = null, offsetX = 0, offsetY = 0, isMoved = false;
 
-  function onMouseDown(e, id, data) {
-    if (e.target.className === 'content' || e.target.className === 'delete-btn') return;
-    activeId = id; startX = e.clientX; startY = e.clientY;
-    initialX = data.x; initialY = data.y; isMoved = false;
-    document.addEventListener('mousemove', onMouseMove);
-    document.addEventListener('mouseup', onMouseUp);
+  function handleStart(e, id) {
+    if (e.target.closest('.content') || e.target.closest('.delete-btn')) return;
+    
+    activeId = id;
+    isMoved = false;
+    const el = document.getElementById(id);
+    const rect = el.getBoundingClientRect();
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    
+    offsetX = clientX - rect.left;
+    offsetY = clientY - rect.top;
+    
+    // ดันขึ้นหน้าสุดชั่วคราวขณะลาก
+    el.style.zIndex = 10000;
+    
+    document.addEventListener('mousemove', handleMove, { passive: false });
+    document.addEventListener('touchmove', handleMove, { passive: false });
+    document.addEventListener('mouseup', handleEnd);
+    document.addEventListener('touchend', handleEnd);
   }
 
-  function onMouseMove(e) {
+  function handleMove(e) {
     if (!activeId) return;
     isMoved = true;
-    const dx = e.clientX - startX, dy = e.clientY - startY;
+    if (e.cancelable) e.preventDefault();
+
+    const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+    const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+    const board = document.getElementById('board');
+    const boardRect = board.getBoundingClientRect();
+
+    let newX = clientX - boardRect.left - offsetX;
+    let newY = clientY - boardRect.top - offsetY;
+
+    // Boundary check (จำกัดพื้นที่ไม่ให้หลุดกระดาน)
+    newX = Math.max(0, Math.min(newX, boardRect.width - 160));
+    newY = Math.max(0, Math.min(newY, boardRect.height - 160));
+
     const el = document.getElementById(activeId);
-    el.style.left = (initialX + dx) + 'px';
-    el.style.top = (initialY + dy) + 'px';
+    el.style.left = newX + 'px';
+    el.style.top = newY + 'px';
   }
 
-  function onMouseUp() {
+  function handleEnd() {
     if (activeId && isMoved) {
       const el = document.getElementById(activeId);
       update(ref(db, 'postits/' + activeId), {
-        x: parseInt(el.style.left), y: parseInt(el.style.top),
-        updatedAt: serverTimestamp(), action: "📍 ย้าย"
+        x: parseInt(el.style.left), 
+        y: parseInt(el.style.top),
+        updatedAt: serverTimestamp(), 
+        action: "📍 ย้าย"
       });
     }
     activeId = null;
-    document.removeEventListener('mousemove', onMouseMove);
-    document.removeEventListener('mouseup', onMouseUp);
+    document.removeEventListener('mousemove', handleMove);
+    document.removeEventListener('touchmove', handleMove);
   }
 
-  onValue(postitsRef, (snapshot) => {
-    const data = snapshot.val() || {};
-    const currentIds = Object.keys(data);
-    document.querySelectorAll('#board .postit').forEach(el => { if (!currentIds.includes(el.id)) el.remove(); });
+  // ใช้ query เพื่อจัดลำดับ Z-index ตามเวลาอัปเดต
+  const sortedQuery = query(postitsRef, orderByChild('updatedAt'));
 
-    currentIds.forEach(id => {
+  onValue(sortedQuery, (snapshot) => {
+    const currentIds = [];
+    let baseZ = 100;
+
+    snapshot.forEach((child) => {
+      const id = child.key;
+      const data = child.val();
+      currentIds.push(id);
+      baseZ++;
+
       let p = document.getElementById(id);
       if (!p) {
         p = document.createElement('div'); p.id = id;
-        p.innerHTML = `<div class="content" contenteditable="true"></div><div class="meta-info"><span class="status-tag"></span><span class="time-str"></span></div><button class="delete-btn">✕</button>`;
-        p.querySelector('.delete-btn').onclick = () => remove(ref(db, 'postits/' + id));
+        p.innerHTML = `
+          <div class="content" contenteditable="true"></div>
+          <div class="meta-info"><span class="status-tag"></span><span class="time-str"></span></div>
+          <button class="delete-btn">✕</button>`;
+        
+        p.querySelector('.delete-btn').onclick = () => { if(confirm("ลบโน้ตนี้?")) remove(ref(db, 'postits/' + id)); };
         p.querySelector('.content').onblur = (e) => {
           update(ref(db, 'postits/' + id), { 
             text: e.target.innerText, updatedAt: serverTimestamp(), action: "✏️ แก้ไข" 
           });
         };
+        p.onmousedown = (e) => handleStart(e, id);
+        p.ontouchstart = (e) => handleStart(e, id);
         document.getElementById('board').appendChild(p);
       }
-      p.className = `postit ${data[id].color}`;
-      p.onmousedown = (e) => onMouseDown(e, id, data[id]);
-      if (activeId !== id) { p.style.left = data[id].x + 'px'; p.style.top = data[id].y + 'px'; }
+      
+      p.className = `postit ${data.color}`;
+      if (activeId !== id) {
+        p.style.left = data.x + 'px';
+        p.style.top = data.y + 'px';
+        p.style.zIndex = baseZ;
+      }
+
       const content = p.querySelector('.content');
-      if (document.activeElement !== content) content.innerText = data[id].text;
-      p.querySelector('.status-tag').innerText = data[id].action || "";
-      p.querySelector('.time-str').innerText = formatTime(data[id].updatedAt);
+      if (document.activeElement !== content) content.innerText = data.text || "";
+      p.querySelector('.status-tag').innerText = data.action || "";
+      p.querySelector('.time-str').innerText = formatTime(data.updatedAt);
+    });
+
+    // ลบโน้ตที่ไม่มีในฐานข้อมูลออก
+    document.querySelectorAll('.postit').forEach(el => {
+      if (!currentIds.includes(el.id)) el.remove();
     });
   });
 
-  window.clearAllData = () => { if(confirm("ล้างกระดานดำ?")) remove(postitsRef); };
+  window.clearAllData = () => { if(confirm("ต้องการล้างกระดานดำสำหรับทุกคนใช่หรือไม่?")) remove(postitsRef); };
 </script>
 </body>
 </html>
